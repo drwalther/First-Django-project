@@ -74,3 +74,19 @@ class BookApiTestCase(APITestCase):
         self.assertEquals(status.HTTP_200_OK, response.status_code)
         self.book_1.refresh_from_db()
         self.assertEquals(500, self.book_1.price)
+
+    def test_delete(self):
+        url = reverse('book-detail', args=(self.book_1.id,))
+        starting_count = Book.objects.all().count()
+        data = {
+            'name': self.book_1.name,
+            'price': self.book_1.price,
+            'author_name': self.book_1.author_name
+        }
+        json_data = json.dumps(data)
+        self.client.force_login(self.user)
+        response = self.client.delete(url, data=json_data,
+                                      content_type='application/json')
+        self.assertEquals(status.HTTP_204_NO_CONTENT, response.status_code)
+        ending_count = Book.objects.all().count()
+        self.assertEquals(starting_count, ending_count + 1)
