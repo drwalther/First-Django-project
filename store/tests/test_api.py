@@ -45,6 +45,7 @@ class BookApiTestCase(APITestCase):
         self.assertEquals(serializer_data, response.data)
 
     def test_create(self):
+        starting_count = Book.objects.all().count()
         url = reverse('book-list')
         data = {
             'name': 'Black fire',
@@ -55,4 +56,21 @@ class BookApiTestCase(APITestCase):
         self.client.force_login(self.user)
         response = self.client.post(url, data=json_data,
                                     content_type='application/json')
+        ending_count = Book.objects.all().count()
         self.assertEquals(status.HTTP_201_CREATED, response.status_code)
+        self.assertEquals(starting_count, ending_count - 1)
+
+    def test_update(self):
+        url = reverse('book-detail', args=(self.book_1.id,))
+        data = {
+            'name': self.book_1.name,
+            'price': 500,
+            'author_name': self.book_1.author_name
+        }
+        json_data = json.dumps(data)
+        self.client.force_login(self.user)
+        response = self.client.put(url, data=json_data,
+                                   content_type='application/json')
+        self.assertEquals(status.HTTP_200_OK, response.status_code)
+        self.book_1.refresh_from_db()
+        self.assertEquals(500, self.book_1.price)
