@@ -12,7 +12,8 @@ class BookSerializerTestCase(TestCase):
         self.user_1 = User.objects.create(username='test_user1')
         self.book_1 = Book.objects.create(name='Alice', price=1000,
                                           author_name='Author 1',
-                                          owner=self.user_1)
+                                          owner=self.user_1,
+                                          readers=)
         self.book_2 = Book.objects.create(name='War and Peace', price=1200,
                                           author_name='Author 2',
                                           owner=self.user_1)
