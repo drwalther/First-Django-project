@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.models import User
+from django.db.models import Count, Case, When
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -24,24 +25,32 @@ class BookApiTestCase(APITestCase):
     def test_get(self):
         url = reverse('book-list')
         response = self.client.get(url)
-        serializer_data = BooksSerializer([self.book_1, self.book_2,
-                                           self.book_3], many=True).data
+        books = Book.objects.all().annotate(annotated_likes=Count(
+            Case(When(userbookrelation__like=True, then=1))))
+        serializer_data = BooksSerializer(books, many=True).data
         self.assertEquals(status.HTTP_200_OK, response.status_code)
         self.assertEquals(serializer_data, response.data)
 
-    def test_get_filter(self):
+    def test_get_search(self):
         url = reverse('book-list')
+        books = Book.objects.filter(
+            id__in=[self.book_1.id, self.book_3.id]).annotate(
+            annotated_likes=Count(
+                Case(When(userbookrelation__like=True, then=1))))
         response = self.client.get(url, data={'search': 'Author 1'})
-        serializer_data = BooksSerializer([self.book_1, self.book_3],
-                                          many=True).data
+        serializer_data = BooksSerializer(books, many=True).data
         self.assertEquals(status.HTTP_200_OK, response.status_code)
         self.assertEquals(serializer_data, response.data)
 
     def test_get_ordering(self):
         url = reverse('book-list')
+        books = Book.objects.filter(
+            id__in=[self.book_1.id, self.book_2.id, self.book_3.id]).annotate(
+            annotated_likes=Count(
+                Case(When(userbookrelation__like=True, then=1)))).order_by(
+            'price')
         response = self.client.get(url, data={'ordering': 'price'})
-        serializer_data = BooksSerializer([self.book_1, self.book_3,
-                                           self.book_2], many=True).data
+        serializer_data = BooksSerializer(books, many=True).data
         self.assertEquals(status.HTTP_200_OK, response.status_code)
         self.assertEquals(serializer_data, response.data)
 
@@ -103,8 +112,8 @@ class BookApiTestCase(APITestCase):
         }
         json_data = json.dumps(data)
         self.client.force_login(self.user_2)
-        response = self.client.put(url, data=json_data,
-                                   content_type='application/json')
+        response = self.client.patch(url, data=json_data,
+                                     content_type='application/json')
         self.assertEquals(status.HTTP_200_OK, response.status_code)
         self.book_1.refresh_from_db()
         self.assertEquals(500, self.book_1.price)
