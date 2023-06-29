@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.db.models import Case, When, Count
+from django.db.models import Case, When, Count, Avg
 from django_filters.compat import TestCase
 
 from store.models import Book, UserBookRelation
@@ -20,20 +20,22 @@ class BookSerializerTestCase(TestCase):
                                           owner=self.user_1)
 
     def test_ok(self):
-        UserBookRelation.objects.create(user=self.user_1, book=self.book_1, like=True)
+        UserBookRelation.objects.create(user=self.user_1, book=self.book_1,
+                                        like=True, rate=5)
         UserBookRelation.objects.create(user=self.user_2, book=self.book_1,
-                                        like=True)
+                                        like=True, rate=5)
         UserBookRelation.objects.create(user=self.user_3, book=self.book_1,
-                                        like=True)
+                                        like=True, rate=4)
 
         UserBookRelation.objects.create(user=self.user_1, book=self.book_2,
-                                        like=True)
+                                        like=True, rate=4)
         UserBookRelation.objects.create(user=self.user_2, book=self.book_2,
-                                        like=True)
+                                        like=True, rate=3)
         UserBookRelation.objects.create(user=self.user_3, book=self.book_1,
                                         like=False)
         books = Book.objects.all().annotate(annotated_likes=Count(
-            Case(When(userbookrelation__like=True, then=1)))).order_by('id')
+            Case(When(userbookrelation__like=True, then=1))),
+            rating=Avg('userbookrelation__rate')).order_by('id')
         data = BooksSerializer(books, many=True).data
         expected_data = [
             {
@@ -41,15 +43,16 @@ class BookSerializerTestCase(TestCase):
                 'name': 'Alice',
                 'price': '1000.00',
                 'author_name': 'Author 1',
-                'annotated_likes': 3
+                'annotated_likes': 3,
+                'rating': '4.67'
             },
             {
                 'id': self.book_2.id,
                 'name': 'War and Peace',
                 'price': '1200.00',
                 'author_name': 'Author 2',
-                'annotated_likes': 2
+                'annotated_likes': 2,
+                'rating': '3.50'
             }
         ]
-        print('Data', data)
         self.assertEquals(expected_data, data)
