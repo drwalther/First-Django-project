@@ -14,7 +14,7 @@ from store.serializers import BooksSerializer, UserBooksRelationSerializer
 class BookViewSet(ModelViewSet):
     queryset = Book.objects.all().annotate(annotated_likes=Count(
             Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate'))
+            rating=Avg('userbookrelation__rate')).select_related('owner').prefetch_related('readers')
     serializer_class = BooksSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     permission_classes = [IsOwnerOrStaffOrReadOnly]

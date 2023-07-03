@@ -1,5 +1,5 @@
 """
-URL configuration for pg project.
+URL configuration for book_store project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/4.2/topics/http/urls/
@@ -28,7 +28,8 @@ router.register(r'book_relation', UserBookRelationView)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('social_django.urls', namespace='social')),
-    path('auth/', auth)
+    path('auth/', auth),
+    path("__debug__/", include("debug_toolbar.urls"))
 ]
 
 urlpatterns += router.urls
