@@ -34,8 +34,11 @@ class BookSerializerTestCase(TestCase):
                                         like=True, rate=4)
         UserBookRelation.objects.create(user=self.user_2, book=self.book_2,
                                         like=True, rate=3)
-        UserBookRelation.objects.create(user=self.user_3, book=self.book_2,
-                                        like=False)
+        user_book_3 = UserBookRelation.objects.create(user=self.user_3,
+                                                      book=self.book_2,
+                                                      like=False)
+        user_book_3.rate = 4
+        user_book_3.save()
         books = Book.objects.all().annotate(annotated_likes=Count(
             Case(When(userbookrelation__like=True, then=1)))).select_related(
             'owner').prefetch_related('readers').order_by('id')
@@ -90,4 +93,3 @@ class BookSerializerTestCase(TestCase):
         ]
 
         self.assertEquals(expected_data, data)
-
