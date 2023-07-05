@@ -8,7 +8,7 @@ from store.serializers import BooksSerializer
 
 class BookSerializerTestCase(TestCase):
 
-    def setUp(self) -> None:
+    def setUp(self):
         self.user_1 = User.objects.create(username='test_user1',
                                           first_name='Paul', last_name='Smith')
         self.user_2 = User.objects.create(username='test_user2',
@@ -22,7 +22,7 @@ class BookSerializerTestCase(TestCase):
         self.book_2 = Book.objects.create(name='War and Peace', price=1200,
                                           author_name='Author 2')
 
-    def test_ok(self) -> None:
+    def test_ok(self):
         UserBookRelation.objects.create(user=self.user_1, book=self.book_1,
                                         like=True, rate=5)
         UserBookRelation.objects.create(user=self.user_2, book=self.book_1,
@@ -37,8 +37,7 @@ class BookSerializerTestCase(TestCase):
         UserBookRelation.objects.create(user=self.user_3, book=self.book_2,
                                         like=False)
         books = Book.objects.all().annotate(annotated_likes=Count(
-            Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate')).select_related(
+            Case(When(userbookrelation__like=True, then=1)))).select_related(
             'owner').prefetch_related('readers').order_by('id')
         data = BooksSerializer(books, many=True).data
         expected_data = [

@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
+
+
 class Book(models.Model):
     name = models.CharField(max_length=250)
     price = models.DecimalField(max_digits=7, decimal_places=2)
@@ -10,6 +12,8 @@ class Book(models.Model):
                               related_name='my_books')
     readers = models.ManyToManyField(User, through='UserBookRelation',
                                      related_name='books')
+    rating = models.DecimalField(max_digits=3, decimal_places=2, default=None,
+                                 null=True)
 
     def __str__(self):
         return f'id {self.id}: {self.name}'
@@ -32,3 +36,8 @@ class UserBookRelation(models.Model):
 
     def __str__(self):
         return f'{self.user.username}, {self.book.name}, Rate: {self.rate}'
+
+    def save(self, *args, **kwargs):
+        from store.logic import set_rating
+        super().save(*args, **kwargs)
+        set_rating(self.book)
